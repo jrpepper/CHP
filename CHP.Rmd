@@ -1,0 +1,46 @@
+---
+title: "CHP Data Analysis"
+author: "Josh Pepper"
+date: "March 9, 2016"
+knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = encoding, output_file = file.path(dirname(inputFile), 'index.html')) })
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r global_options, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(fig.width=8, echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+#Loading Data
+##First map
+Map of all CHP citation in Oakland from 1/1/2013-12/31/2014:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr, verbose = FALSE)
+library(ggplot2, verbose = FALSE)
+library(leaflet, verbose = FALSE)
+
+switrs_all <- read.csv("Collisions.csv")
+
+switrs <- subset(switrs_all, POINT_X!=0 & POINT_Y!=0)
+
+
+switrs$date <- as.Date(as.character(switrs$DATE_), "%m/%d/%y")
+
+#map all data from 2013-2014
+leaflet() %>% addTiles() %>%
+  addCircleMarkers(data=switrs, lng=switrs$POINT_X, lat=switrs$POINT_Y,
+                   clusterOptions = markerClusterOptions(spiderfyDistanceMultiplier=2, maxClusterRadius=60),
+                   popup=~paste("Date: ", date, "<br/>Time:", TIME_)
+  )
+```
+
+#Columns in the data
+List of all columns in the data
+```{r}
+summary(switrs)
+```
+
