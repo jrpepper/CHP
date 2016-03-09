@@ -18,10 +18,7 @@ knitr::opts_chunk$set(fig.width=8, echo=TRUE, warning=FALSE, message=FALSE)
 #Introduction
 This file is intended to describe the analysis of the CHP SWITRS data set and display maps and results of the analysis.
 
-
-#Loading Data
-##First map
-Map of all CHP citation in Oakland from 1/1/2013-12/31/2014:
+#Loading data
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(dplyr, verbose = FALSE)
@@ -43,21 +40,25 @@ switrs$long <- jitter(switrs$long, factor = .8)
 
 #reformat dates
 switrs$date <- as.Date(as.character(switrs$DATE_), "%m/%d/%y")
+```
 
+##Summary statistics
+
+* Number of rows in the data set: *`r dim(switrs)[1]`*
+* Number of columns in the data set: *`r dim(switrs)[2]`*
+* Names of columns in the data set:
+    + `r names(switrs)`
+
+##First map
+Map of all CHP citation in Oakland from 1/1/2013-12/31/2014:
+
+```{r, echo=FALSE}
 #map all data from 2013-2014
 leaflet() %>% addTiles() %>%
   addCircleMarkers(data=switrs,
                    clusterOptions = markerClusterOptions(spiderfyDistanceMultiplier=2, maxClusterRadius=60),
                    popup=~paste("Date: ", date, "<br/>Time:", TIME_)
   )
-```
-
-#Columns in the data
-Names of each column in the data set are shown below. A PDF document that explains each of the columns in detail with all possible options for data <a href="./SWITRS_codebook.pdf" target="_blank">can be found here</a>. 
-
-
-```{r}
-names(switrs)
 ```
 
 #Bicyclist data
