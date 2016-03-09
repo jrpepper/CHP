@@ -5,6 +5,7 @@ date: "March 9, 2016"
 knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = encoding, output_file = file.path(dirname(inputFile), 'index.html')) })
 output:
   html_document:
+    theme: yeti
     toc: true
     toc_float: true
     number_sections: true
@@ -13,6 +14,10 @@ output:
 ```{r global_options, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(fig.width=8, echo=TRUE, warning=FALSE, message=FALSE)
 ```
+
+#Introduction
+This file is intended to describe the analysis of the CHP SWITRS data set and display maps and results of the analysis.
+
 
 #Loading Data
 ##First map
@@ -25,22 +30,58 @@ library(leaflet, verbose = FALSE)
 
 switrs_all <- read.csv("Collisions.csv")
 
+#take a subset for only data with lat/long
 switrs <- subset(switrs_all, POINT_X!=0 & POINT_Y!=0)
 
+#rename lat and long fields
+switrs$lat <- switrs$POINT_Y
+switrs$long <- switrs$POINT_X
 
+#add jitter to points
+switrs$lat <- jitter(switrs$lat, factor = .8)
+switrs$long <- jitter(switrs$long, factor = .8)
+
+#reformat dates
 switrs$date <- as.Date(as.character(switrs$DATE_), "%m/%d/%y")
 
 #map all data from 2013-2014
 leaflet() %>% addTiles() %>%
-  addCircleMarkers(data=switrs, lng=switrs$POINT_X, lat=switrs$POINT_Y,
+  addCircleMarkers(data=switrs,
                    clusterOptions = markerClusterOptions(spiderfyDistanceMultiplier=2, maxClusterRadius=60),
                    popup=~paste("Date: ", date, "<br/>Time:", TIME_)
   )
 ```
 
 #Columns in the data
-List of all columns in the data
+Names of each column in the data set are shown below. A PDF document that explains each of the columns in detail with all possible options for data <a href="./SWITRS_codebook.pdf" target="_blank">can be found here</a>. 
+
+
 ```{r}
-summary(switrs)
+names(switrs)
+```
+
+#Bicyclist data
+Notice how one of the columns is titled `BICINJ`. We can map a subset of this data and color code it based on time of accident. I also added a link to more information about each accident using data from the UC Berkeley [Transportation Injury Mapping System (TIPS)](http://tims.berkeley.edu/index.php). TIPS has a [pretty good mapping tool](http://tims.berkeley.edu/tools/gismap/index.php) as well.
+
+```{r, echo=FALSE}
+#make bike subset
+bike <- subset(switrs, BICINJ==1)
+
+#make color bin
+bikeColor <- colorBin(rainbow(25), bike$TIME_, bins=24)
+
+
+#map all data from 2013-2014
+leaflet() %>% addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(data=bike, stroke = FALSE, fillOpacity = 0.5, radius=8,
+                   popup=~paste("Date: ", date, "<br/>Time: ", TIME_,"<br><a href='http://tims.berkeley.edu/tools/query/collision_details.php?no=",CASEID,"' target='_blank'>Link to Case Details</a>", sep=""),
+                   color = ~bikeColor(TIME_)
+  ) %>%
+      addLegend(title = "Time of collision", pal = bikeColor,
+                values = bike$TIME_, opacity = 1, position="bottomleft", labFormat = labelFormat(
+                  prefix = '', suffix = ':00',
+                  transform = function(x) x/100
+                  )
+                )
 ```
 
