@@ -16,7 +16,7 @@ knitr::opts_chunk$set(fig.width=8, echo=TRUE, warning=FALSE, message=FALSE)
 ```
 
 #Introduction
-This file is intended to describe the analysis of the CHP SWITRS data set and display maps and results of the analysis.
+This file is intended to describe the analysis of the [CHP SWITRS data set](http://iswitrs.chp.ca.gov/Reports/jsp/userLogin.jsp) and display maps and results of the analysis. The following data is for the City of Oakland for the years 2013-14.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(dplyr, verbose = FALSE)
@@ -153,3 +153,27 @@ leaflet() %>% addProviderTiles("CartoDB.Positron") %>%
                 )
 ```
 
+#Alcohol use data
+This map uses the field `ETOH`, which indicates whether the collision involved a party that had been drinking. It's color-coded by night/day and you can see how most of the alcohol-related collisions occur at night.
+
+```{r, echo=FALSE}
+#make bike subset
+ETOH <- subset(switrs, switrs$ETOH=="Y")
+
+#make color bin
+ETOHColor <- colorBin(c("#224C5D","#108082","#95BFB1","#E66A62","#F5B76E","#FBE68D","#F5B76E","#E66A62","#95BFB1","#108082","#224C5D"), ETOH$TIME_, bins=24)
+
+
+#map all data from 2013-2014
+leaflet() %>% addProviderTiles("CartoDB.Positron") %>%
+  addCircleMarkers(data=ETOH, stroke = FALSE, fillOpacity = 0.7, radius=8,
+                   popup=~paste("Date: ", date, "<br/>Time: ", TIME_,"<br><a href='http://tims.berkeley.edu/tools/query/collision_details.php?no=",CASEID,"' target='_blank'>Link to Case Details</a>", sep=""),
+                   color = ~ETOHColor(TIME_)
+  ) %>%
+      addLegend(title = "Time of collision", pal = ETOHColor,
+                values = ETOH$TIME_, opacity = 1, position="bottomleft", labFormat = labelFormat(
+                  prefix = '', suffix = ':00',
+                  transform = function(x) x/100
+                  )
+                )
+```
