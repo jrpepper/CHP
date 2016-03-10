@@ -18,8 +18,6 @@ knitr::opts_chunk$set(fig.width=8, echo=TRUE, warning=FALSE, message=FALSE)
 #Introduction
 This file is intended to describe the analysis of the CHP SWITRS data set and display maps and results of the analysis.
 
-#Loading data
-
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(dplyr, verbose = FALSE)
 library(ggplot2, verbose = FALSE)
@@ -42,14 +40,83 @@ switrs$long <- jitter(switrs$long, factor = .8)
 switrs$date <- as.Date(as.character(switrs$DATE_), "%m/%d/%y")
 ```
 
-##Summary statistics
+#Summary statistics
 
 * Number of rows in the data set: *`r dim(switrs)[1]`*
 * Number of columns in the data set: *`r dim(switrs)[2]`*
 * Names of columns in the data set:
     + `r names(switrs)`
+* More information on each column and its possible values can be found in the <a href="./SWITRS_codebook.pdf" target="_blank">SWITRS Codebook</a>.
 
-##First map
+##Incidents by Month
+```{r, echo=FALSE}
+
+d2 <- switrs %>% group_by(MONTH_) %>% summarise(n=n())
+    #d2$month <- factor(d2$MONTH_, levels= c("Jan", "Feb","Mar", "Apr","May","June","July","Aug","Sep","Oct","Nov","Dec"))
+    #d2 <- d2[order(d2$DayOfWeek), ]
+d2$MONTH_ <- factor(d2$MONTH_)
+    
+ggplot(d2, aes(x=MONTH_, y=n)) + 
+  geom_bar(stat = "identity", alpha=0.6) + 
+  theme_minimal() +
+  labs(y=NULL, x=NULL, title="Total incidencts by Month") +
+  scale_x_discrete(labels=c("Jan", "Feb","Mar", "Apr","May","June","July","Aug","Sep","Oct","Nov","Dec")) +
+  scale_y_continuous(expand=c(0,0))
+
+```
+
+##Incidents by day of week
+```{r, echo=FALSE}
+
+d2 <- switrs %>% group_by(DAYWEEK) %>% summarise(n=n())
+    #d2$month <- factor(d2$MONTH_, levels= c("Jan", "Feb","Mar", "Apr","May","June","July","Aug","Sep","Oct","Nov","Dec"))
+    #d2 <- d2[order(d2$DayOfWeek), ]
+d2$DAYWEEK <- factor(d2$DAYWEEK)
+#d2$DAYWEEK <- factor(d2$DAYWEEK, levels=c(1,2,3,4,5,6,7))
+#d2 <- d2[order(d2$DAYWEEK), ]
+    
+ggplot(d2, aes(x=DAYWEEK, y=n)) + 
+  geom_bar(stat = "identity", alpha=0.6) + 
+  theme_minimal() +
+  labs(y=NULL, x=NULL, title="Total incidencts by Day of Week") +
+  scale_x_discrete(labels=c("Su","M","Tu","W","Th","F","Sa")) +
+  scale_y_continuous(expand=c(0,0))
+
+```
+
+##Incidents by time of day
+```{r, echo=FALSE}
+
+switrs$time <- switrs[,"TIME_"] %>% formatC(digits = 3, flag = "0")
+switrs$time <- as.POSIXlt(switrs$time, format="%H%M")$hour
+
+timeValues <-tapply(switrs$CASEID, switrs$time, length)
+timeValues <- as.data.frame(timeValues)
+    
+    #make a column with district name
+    timeValues$time <- row.names(timeValues)
+    timeValues$time <- as.POSIXlt(timeValues$time, format="%H")$hour
+    timeValues[is.na(timeValues),] <- 0
+    
+    hours <-tapply(timeValues$timeValues, timeValues$time, sum) %>% as.data.frame()
+    names(hours) <- "hourCount"
+    hours$hour <- row.names(hours)
+    
+    #sort in descending order
+    hours <- transform(hours, hour = reorder(hour, as.numeric(hour)))
+    
+    #make plot
+    ggplot(data = hours, aes( hour, hourCount )) +
+      theme_minimal() +
+      geom_bar(stat="identity", alpha=0.3) +
+      stat_smooth(data=hours, aes(x=hour, y=hourCount, group = 1), colour="blue", n=24, size=2) +
+      labs(x=NULL, y=NULL, title="Incidencts by time of day") + 
+      expand_limits(y=0) +
+      scale_x_discrete(breaks=c(0,6,12,18), labels=c("12:00AM", "6:00AM", "12:00PM","6:00PM"))
+```
+
+
+#First map
 Map of all CHP citation in Oakland from 1/1/2013-12/31/2014:
 
 ```{r, echo=FALSE}
