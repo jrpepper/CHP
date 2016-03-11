@@ -1,0 +1,101 @@
+---
+title: "CHP-2"
+author: "Josh Pepper"
+date: "March 10, 2016"
+output: html_document
+---
+
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE}
+library(ggplot2)
+library(data.table)
+```
+
+
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE, fig.width=9}
+switrs_all <- fread('CollisionRecords.csv', header = T, sep = ',', showProgress=FALSE)
+
+switrs_fresno <- subset(switrs_all, CNTY_CITY_LOC=="1005")
+switrs_oakland <- subset(switrs_all, CNTY_CITY_LOC=="0109")
+
+calc_summary <- function(switrs, name) {
+  
+    timeValues <-tapply(switrs$CASE_ID, switrs$ACCIDENT_YEAR, length)
+    timeValues <- as.data.frame(timeValues)
+    
+    #make a column with district name
+    timeValues$time <- row.names(timeValues)
+    timeValues$time <- as.POSIXlt(timeValues$time, format="%H")$hour
+    timeValues[is.na(timeValues),] <- 0
+    
+    
+    names(timeValues) <- c("count","year")
+    timeValues$year <- row.names(timeValues)
+    
+    timeValues$city <- name
+    
+    return(timeValues)
+}
+
+summary_oakland <- calc_summary(switrs_oakland, "oakland")
+summary_fresno <- calc_summary(switrs_fresno, "fresno")
+    
+combined <- rbind(summary_fresno, summary_oakland)
+
+    #make plot
+    ggplot(data = combined, aes( year, count, fill = city )) +
+      theme_minimal() +
+      geom_bar(stat="identity", alpha=0.3, position = "dodge") +
+      #stat_smooth(data=timeValues, aes(x=year, y=count, group = 1), colour="blue", n=24, size=2) +
+      labs(x=NULL, y=NULL, title="Oakland and Fresno (all collisions)") + 
+      expand_limits(y=0)
+```
+
+#Fatal colllisions
+```{r, echo=FALSE, fig.width=9}
+switrs_fatal <- subset(switrs_all, switrs_all$COLLISION_SEVERITY==1)
+
+switrs_fresno <- subset(switrs_fatal, CNTY_CITY_LOC=="1005")
+switrs_oakland <- subset(switrs_fatal, CNTY_CITY_LOC=="0109")
+
+
+
+summary_oakland <- calc_summary(switrs_oakland, "oakland")
+summary_fresno <- calc_summary(switrs_fresno, "fresno")
+    
+combined <- rbind(summary_fresno, summary_oakland)
+
+    #make plot
+    ggplot(data = combined, aes( year, count, fill = city )) +
+      theme_minimal() +
+      geom_bar(stat="identity", alpha=0.3, position = "dodge") +
+      #stat_smooth(data=timeValues, aes(x=year, y=count, group = 1), colour="blue", n=24, size=2) +
+      labs(x=NULL, y=NULL, title="Oakland and Fresno (FATAL collisions)") + 
+      expand_limits(y=0)
+
+```
+
+#Fatal and severe colllisions
+```{r, echo=FALSE, fig.width=9}
+switrs_fatal <- subset(switrs_all, switrs_all$COLLISION_SEVERITY==1 | switrs_all$COLLISION_SEVERITY==2)
+
+switrs_fresno <- subset(switrs_fatal, CNTY_CITY_LOC=="1005")
+switrs_oakland <- subset(switrs_fatal, CNTY_CITY_LOC=="0109")
+
+
+
+summary_oakland <- calc_summary(switrs_oakland, "oakland")
+summary_fresno <- calc_summary(switrs_fresno, "fresno")
+    
+combined <- rbind(summary_fresno, summary_oakland)
+
+    #make plot
+    ggplot(data = combined, aes( year, count, fill = city )) +
+      theme_minimal() +
+      geom_bar(stat="identity", alpha=0.3, position = "dodge") +
+      #stat_smooth(data=timeValues, aes(x=year, y=count, group = 1), colour="blue", n=24, size=2) +
+      labs(x=NULL, y=NULL, title="Oakland and Fresno (FATAL and SEVERE collisions)") + 
+      expand_limits(y=0)
+
+```

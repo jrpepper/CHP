@@ -1,0 +1,64 @@
+---
+title: "Fresno CHP data"
+author: "Josh Pepper"
+date: "March 10, 2016"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+##Incidents by year
+```{r, echo=FALSE}
+library(ggplot2)
+
+switrs_all <- read.csv("Collisions.csv")
+
+switrs_fatal <- subset(switrs_all, switrs_all$COLLISION_SEVERITY==1)
+
+switrs_fresno <- subset(switrs_fatal, CNTY_CITY_LOC=="1005")
+switrs_oakland <- subset(switrs_fatal, CNTY_CITY_LOC=="0109")
+
+switrs <- switrs_oakland
+
+calc_summary <- function(switrs, name) {
+  
+    timeValues <-tapply(switrs$CASE_ID, switrs$ACCIDENT_YEAR, length)
+    timeValues <- as.data.frame(timeValues)
+    
+    #make a column with district name
+    timeValues$time <- row.names(timeValues)
+    timeValues$time <- as.POSIXlt(timeValues$time, format="%H")$hour
+    timeValues[is.na(timeValues),] <- 0
+    
+    
+    names(timeValues) <- c("count","year")
+    timeValues$year <- row.names(timeValues)
+    
+    timeValues$city <- name
+    
+    return(timeValues)
+}
+
+summary_oakland <- calc_summary(switrs_oakland, "oakland")
+summary_fresno <- calc_summary(switrs_fresno, "fresno")
+    
+combined <- rbind(summary_fresno, summary_oakland)
+
+    #make plot
+    ggplot(data = combined, aes( year, count, fill = city )) +
+      theme_minimal() +
+      geom_bar(stat="identity", alpha=0.3, position = "dodge") +
+      #stat_smooth(data=timeValues, aes(x=year, y=count, group = 1), colour="blue", n=24, size=2) +
+      labs(x=NULL, y=NULL, title="Oakland and Fresno (FATAL collisions)") + 
+      expand_limits(y=0)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

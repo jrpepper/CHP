@@ -6,3 +6,9 @@
 .Rhistory
 
 .Rhistory
+
+CollisionRecords.csv
+
+*.csv
+
+Collisions.csv

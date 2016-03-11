@@ -22,8 +22,9 @@ This file is intended to describe the analysis of the [CHP SWITRS data set](http
 library(dplyr, verbose = FALSE)
 library(ggplot2, verbose = FALSE)
 library(leaflet, verbose = FALSE)
+library(data.table)
 
-switrs_all <- read.csv("Collisions.csv")
+switrs_all <- fread('CollisionRecords.csv', header = T, sep = ',')
 
 #take a subset for only data with lat/long
 switrs <- subset(switrs_all, POINT_X!=0 & POINT_Y!=0)
@@ -136,7 +137,9 @@ Notice how one of the columns is titled `BICINJ`. We can map a subset of this da
 bike <- subset(switrs, BICINJ==1)
 
 #make color bin
-bikeColor <- colorBin(rainbow(25), bike$TIME_, bins=24)
+    #c("#224C5D","#108082","#95BFB1","#E66A62","#F5B76E","#FBE68D","#F5B76E","#E66A62","#95BFB1","#108082","#224C5D")
+    
+bikeColor <- colorBin(heat.colors(15), bike$TIME_, bins=8)
 
 
 #map all data from 2013-2014
@@ -161,7 +164,7 @@ This map uses the field `ETOH`, which indicates whether the collision involved a
 ETOH <- subset(switrs, switrs$ETOH=="Y")
 
 #make color bin
-ETOHColor <- colorBin(c("#224C5D","#108082","#95BFB1","#E66A62","#F5B76E","#FBE68D","#F5B76E","#E66A62","#95BFB1","#108082","#224C5D"), ETOH$TIME_, bins=24)
+ETOHColor <- colorBin(heat.colors(15), ETOH$TIME_, bins=8)
 
 
 #map all data from 2013-2014
